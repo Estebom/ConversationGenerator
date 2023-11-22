@@ -103,7 +103,7 @@ Action: the action to take should be one of [{tool_names}]
 Action Input: the input to the action
 Observation: the result of the action
 Thought: I know what the conversation will be about
-Conversation Start: imitate User_1 to start discussion based on observation 
+Action: imitate User_1 to start discussion based on observation 
 Thought: I have User_1's conversation starter
 User_2 Response: imitate User_2 reply to User_1's Conversation starter
 Thought: I have User_2's reply to User_1's response
@@ -134,23 +134,34 @@ class ConvoPromptTemplate(StringPromptTemplate):
     def format(self, **kwargs) -> str:
        
         intermediate_steps = kwargs.pop("intermediate_steps", [])
-        conversation_line_count = 0
+        conversation_line_count = len(intermediate_steps)
         thoughts = ""
-        for step in intermediate_steps:
-            if isinstance(step, tuple) and len(step) == 2:
-                action, observation = step
-            if isinstance(action, str):
-                thoughts += action
-            thoughts += f"\nObservation: {observation}\nThought:"
-            if isinstance(step, tuple) and len(step) == 3:
-                conversation_start, user_1_response, user_2_response = step
-                thoughts += f"\nConversation Start: {conversation_start}\nThoughts:"
+        for action, observation in intermediate_steps:
+            thoughts += f"Action: {action}\nObservation: {observation}\n"
+            thoughts += f"\nAction: {action}\nThoughts:"
+
+        # Check if conversation reached 16 lines and prepare the next step
+        for user_1_response,user_2_response in intermediate_steps:
+            if conversation_line_count < 16:
                 thoughts += f"\nUser_1 Response: {user_1_response}\nThoughts:"
                 thoughts += f"\nUser_2 Response: {user_2_response}\nThoughts:"
-                conversation_line_count += 1
-            if conversation_line_count >= 1:
-            # If conversation reached 16 lines, prepare to end the conversation
-                kwargs["agent_scratchpad"] += "Final Conversation"
+            else:
+                thoughts += "\nFinal Conversation:\n"
+        # for step in intermediate_steps:
+        #     if isinstance(step, tuple) and len(step) == 2:
+        #         action, observation = step
+        #     if isinstance(action, str):
+        #         thoughts += action
+        #     thoughts += f"\nObservation: {observation}\nThought:"
+        #     if isinstance(step, tuple) and len(step) == 3:
+        #         conversation_start, user_1_response, user_2_response = step
+        #         thoughts += f"\nConversation Start: {conversation_start}\nThoughts:"
+        #         thoughts += f"\nUser_1 Response: {user_1_response}\nThoughts:"
+        #         thoughts += f"\nUser_2 Response: {user_2_response}\nThoughts:"
+        #         conversation_line_count += 1
+        #     if conversation_line_count >= 8:
+        #     # If conversation reached 16 lines, prepare to end the conversation
+        #         thoughts += "\nFinal Conversation:\n"
 
         kwargs["agent_scratchpad"] = thoughts
 
@@ -286,7 +297,7 @@ class CustomOutputParser(AgentOutputParser):
             # Check if agent should finish with Final Conversation
         elif "Final Conversation:" in llm_output:
             return AgentFinish(
-                   return_values={"output": llm_output.split("Final Conversation:")[-1].strip()},
+                   return_values={"output": llm_output.split("Final Conversation:")[1].strip()},
                    log=llm_output,
                 )
 
