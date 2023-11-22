@@ -90,7 +90,7 @@ def get_tools(query):
 
 
 template ="""\
-Given the two user's data that includes interests and traits, find a current discussion topic and create a 16 sentense discussion between the two users using realistic emotional language. These are the tools available to you:
+Given the two user's data that includes interests and traits, find a current discussion topic and create a 16 sentence dramatized discussion between the two users using realistic emotional language creating, The discussion should have realistic language and have creative twists to keep the conversation going and be able to provoke an emotional response to the reader . These are the tools available to you:
 {tools}
 
 
@@ -142,7 +142,7 @@ class ConvoPromptTemplate(StringPromptTemplate):
 
         # Check if conversation reached 16 lines and prepare the next step
         for user_1_response,user_2_response in intermediate_steps:
-            if conversation_line_count < 16:
+            if conversation_line_count <= 32:
                 thoughts += f"\nUser_1 Response: {user_1_response}\nThoughts:"
                 thoughts += f"\nUser_2 Response: {user_2_response}\nThoughts:"
             else:
@@ -181,15 +181,7 @@ class ConvoPromptTemplate(StringPromptTemplate):
 
         return self.template.format(**kwargs)
         
-        # prompt = self.template.format(
-
-        #     user_1 = user_1,
-        #     user_2 = user_2,
-        #     tools = "\n".join([f"{tool.name}: {tool.description}" for tool in tools]),
-        #     tool_names = ", ".join([tool.name for tool in self.tools]),
-        #     agent_scratchpad = self.generate_conversation(intermediate_steps)
-        #     )
-        # return prompt
+       
     
 
       
@@ -208,47 +200,7 @@ class CustomOutputParser(AgentOutputParser):
 
     def __init__(self):
         super().__init__()
-    # def extract_response_for_user_1(self,llm_output):
-    #     """
-    #     Extracts User_1's response from the language model's output.
 
-    #     Args:
-    #         llm_output (str): the raw output from the language model.
-
-    #     Returns:
-    #         str: The extracted response of User_1.
-    #     """
-    #     pattern = r"User_1 Response: (.*?)\n"
-
-    #     # Use regular expression to search for the pattern
-    #     match = re.search(pattern, llm_output, re.DOTALL)
-    #     if match:
-    #         # Return the captured group which is User_1's response
-    #         return match.group(1).strip()
-    #     else:
-    #         # Handle cases where the pattern is not found
-    #         return "No response found"  # or handle it differently as needed
-        
-    # def extract_response_for_user_2(self,llm_output):
-    #     """
-    #     Extracts User_2's response from the language model's output.
-
-    #     Args:
-    #         llm_output (str): the raw output from the language model.
-
-    #     Returns:
-    #         str: The extracted response of User_2.
-    #     """
-    #     pattern = r"User_2 Response: (.*?)\n"
-
-    #     # Use regular expression to search for the pattern
-    #     match = re.search(pattern, llm_output, re.DOTALL)
-    #     if match:
-    #         # Return the captured group which is User_1's response
-    #         return match.group(1).strip()
-    #     else:
-    #         # Handle cases where the pattern is not found
-    #         return "No response found"  # or handle it differently as needed
     def handle_valid_observation(self, observation, llm_output):
         # Process the valid observation
         # Example: Returning AgentFinish with the valid observation
@@ -311,11 +263,13 @@ class CustomOutputParser(AgentOutputParser):
         else:
             raise OutputParserException(f"Could not parse LLM output: `{llm_output}`")
     
-
+#from langchain.chat_models import ChatOpenAI
+#chat_model = ChatOpenAI(temperature=0.9, model="gpt-4")
 
 outputParser = CustomOutputParser()
 
 llm = OpenAI(temperature = 0.9)
+#llm = 
 
 llm_chain = LLMChain(llm = llm, prompt=prompt)
 
@@ -332,17 +286,7 @@ allowed_tools = tool_names
 from langchain.schema.agent import AgentFinish
 from langchain.agents import AgentExecutor
 
-# docs = [
-#     Document(page_content=t.description, metadata={"index": i})
-#     for i, t in enumerate(tools)
-# ]
-# vector_store = FAISS.from_documents(docs, OpenAIEmbeddings())
-# retriever = vector_store.as_retriever()
 
-
-# def get_tools(query):
-#     docs = retriever.get_relevant_documents(query)
-#     return [tools[d.metadata["index"]] for d in docs]
 
 intermediate_steps = []
 user_1 =  "Office worker that loves to polay video games, on his days off he enjoys watching anime"
@@ -350,26 +294,7 @@ user_2 = "Teacher that loves to do art in free time. Always up to date on politi
 agent_executor = AgentExecutor.from_agent_and_tools(agent=agent, tools=ALL_TOOLS,handle_parsing_errors=True, verbose = True)
 conversation = agent_executor.run(prompt = prompt, user_1= user_1, user_2 = user_2)
 print(conversation)
-# while True:
-#     current_prompt = prompt.format(user_1 = user_1, user_2 = user_2, intermediate_steps = intermediate_steps)
 
-#     response,get_tools =  agent_executor.run(prompt = current_prompt, user_1 = user_1, user_2 = user_2)
-
-#     if get_tools == "UpdateConversation":
-
-        
-
-#         intermediate_steps = update_conversation(
-#             intermediate_steps,
-#             ["User_1_response"],
-#             ["User_2_response"]
-            
-#         )
-
-#         if len(intermediate_steps) >=8:
-#             break
-# final_conversation = final_conversation = "\n".join([f"{step[0]} {step[1]}" for step in intermediate_steps])
-# print("Final Conversation:" , final_conversation)
 
 
 
